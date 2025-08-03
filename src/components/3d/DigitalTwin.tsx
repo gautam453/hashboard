@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text, Box, Sphere, Cylinder } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { motion } from "framer-motion";
 import * as THREE from "three";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,14 +58,14 @@ function ProjectNode({ node, onClick, isAnimated }: {
 
   return (
     <group position={node.position}>
-      <Box
+      <mesh
         ref={meshRef}
-        args={[1, 1, 1]}
         onClick={() => onClick(node.id)}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
         scale={hovered ? 1.1 : 1}
       >
+        <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial 
           color={statusColors[node.status]} 
           transparent 
@@ -73,74 +73,30 @@ function ProjectNode({ node, onClick, isAnimated }: {
           emissive={hovered ? statusColors[node.status] : '#000000'}
           emissiveIntensity={hovered ? 0.2 : 0}
         />
-      </Box>
+      </mesh>
       
       {/* Completion indicator */}
-      <Cylinder
-        args={[0.6, 0.6, node.completion / 100 * 1.2]}
-        position={[0, -(1.2 - node.completion / 100 * 1.2) / 2, 0]}
-      >
+      <mesh position={[0, -(1.2 - node.completion / 100 * 1.2) / 2, 0]}>
+        <cylinderGeometry args={[0.6, 0.6, node.completion / 100 * 1.2]} />
         <meshStandardMaterial color="#ffffff" transparent opacity={0.3} />
-      </Cylinder>
+      </mesh>
 
-      {/* Label */}
-      <Text
-        position={[0, 1.5, 0]}
-        fontSize={0.2}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {node.name}
-      </Text>
-      
-      <Text
-        position={[0, 1.2, 0]}
-        fontSize={0.15}
-        color="#cccccc"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {node.completion}%
-      </Text>
+      {/* Simple text label - using basic mesh instead of Text component */}
+      <mesh position={[0, 1.5, 0]}>
+        <planeGeometry args={[2, 0.5]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.8} />
+      </mesh>
     </group>
   );
 }
 
-function DependencyLines({ projectData }: { projectData: ProjectNode[] }) {
-  const lines: JSX.Element[] = [];
-  
-  projectData.forEach((node, nodeIndex) => {
-    node.dependencies.forEach((depId, depIndex) => {
-      const depNode = projectData.find(n => n.id === depId);
-      if (depNode) {
-        const points = [
-          new THREE.Vector3(...node.position),
-          new THREE.Vector3(...depNode.position)
-        ];
-        
-        const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        
-        lines.push(
-          <primitive 
-            key={`${node.id}-${depId}-${nodeIndex}-${depIndex}`}
-            object={
-              new THREE.Line(
-                geometry,
-                new THREE.LineBasicMaterial({ 
-                  color: '#666666', 
-                  transparent: true, 
-                  opacity: 0.4 
-                })
-              )
-            }
-          />
-        );
-      }
-    });
-  });
-  
-  return <>{lines}</>;
+function SimpleGrid() {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
+      <planeGeometry args={[20, 20]} />
+      <meshBasicMaterial color="#333333" wireframe />
+    </mesh>
+  );
 }
 
 export function DigitalTwin({ 
@@ -149,7 +105,6 @@ export function DigitalTwin({
   onToggleSimulation, 
   onNodeClick 
 }: DigitalTwinProps) {
-  const [viewMode, setViewMode] = useState<'overview' | 'detail'>('overview');
   
   return (
     <Card className="h-full">
@@ -207,8 +162,8 @@ export function DigitalTwin({
             <directionalLight position={[10, 10, 10]} intensity={1} />
             <pointLight position={[-10, -10, -10]} intensity={0.5} />
             
-            {/* Grid Floor */}
-            <gridHelper args={[20, 20, '#333333', '#333333']} />
+            {/* Simple Grid */}
+            <SimpleGrid />
             
             {/* Project Nodes */}
             {projectData.map((node) => (
@@ -219,9 +174,6 @@ export function DigitalTwin({
                 isAnimated={isSimulationRunning}
               />
             ))}
-            
-            {/* Dependency Lines */}
-            <DependencyLines projectData={projectData} />
             
             <OrbitControls 
               enablePan={true}
