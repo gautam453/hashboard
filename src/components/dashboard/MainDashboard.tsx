@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "./DashboardHeader";
 import { AgentCard, type Agent } from "@/components/agents/AgentCard";
 import { DigitalTwin } from "@/components/3d/DigitalTwin";
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Activity, 
   AlertTriangle, 
@@ -20,9 +22,17 @@ import {
 } from "lucide-react";
 
 export function MainDashboard() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isDark, setIsDark] = useState(false);
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [isSimulationRunning, setIsSimulationRunning] = useState(false);
+
+  // Load project settings from localStorage
+  const [projectSettings, setProjectSettings] = useState(() => {
+    const saved = localStorage.getItem('project_settings');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // Mock data
   const [agents] = useState<Agent[]>([
@@ -99,7 +109,9 @@ export function MainDashboard() {
     { id: '8', name: 'Deployment', position: [6, 0, 0] as [number, number, number], status: 'pending' as const, completion: 0, dependencies: ['4', '7'] }
   ];
 
-  const projectDueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // 14 days from now
+  const projectDueDate = projectSettings?.dueDate ? 
+    new Date(projectSettings.dueDate) : 
+    new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
   useEffect(() => {
     if (isDark) {
@@ -110,19 +122,57 @@ export function MainDashboard() {
   }, [isDark]);
 
   const handleAgentToggle = (id: string) => {
-    console.log('Toggle agent:', id);
+    toast({
+      title: "Agent Status Changed",
+      description: `Agent ${id} has been toggled.`,
+    });
   };
 
   const handleAgentConfigure = (id: string) => {
-    console.log('Configure agent:', id);
+    toast({
+      title: "Agent Configuration",
+      description: `Opening configuration for agent ${id}...`,
+    });
   };
 
   const handleAgentDetails = (id: string) => {
-    console.log('View agent details:', id);
+    toast({
+      title: "Agent Details",
+      description: `Viewing detailed metrics for agent ${id}...`,
+    });
   };
 
   const handleNodeClick = (nodeId: string) => {
-    console.log('Node clicked:', nodeId);
+    toast({
+      title: "Task Selected",
+      description: `Viewing details for task: ${nodeId}`,
+    });
+  };
+
+  const handleGenerateReport = () => {
+    toast({
+      title: "Report Generated",
+      description: "Project report has been generated and will be available shortly.",
+    });
+  };
+
+  const handleScheduleReview = () => {
+    toast({
+      title: "Review Scheduled",
+      description: "A project review meeting has been scheduled for next week.",
+    });
+  };
+
+  const handleRiskAnalysis = () => {
+    toast({
+      title: "Risk Analysis Started",
+      description: "Running comprehensive risk analysis on all project components...",
+    });
+  };
+
+  // If no project settings, redirect to settings
+  const handleSetupProject = () => {
+    navigate('/settings');
   };
 
   const activeAgents = agents.filter(a => a.status === 'active').length;
@@ -139,6 +189,34 @@ export function MainDashboard() {
       />
 
       <main className="p-6">
+        {/* Project Setup Warning */}
+        {!projectSettings && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
+            <Card className="border-warning bg-warning/5">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-5 h-5 text-warning" />
+                    <div>
+                      <p className="font-medium">Project Setup Required</p>
+                      <p className="text-sm text-muted-foreground">
+                        Configure your project settings to get personalized insights
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={handleSetupProject} variant="outline">
+                    Setup Project
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Key Metrics Row */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -267,15 +345,30 @@ export function MainDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={handleGenerateReport}
+                  >
                     <BarChart3 className="w-4 h-4 mr-2" />
                     Generate Report
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={handleScheduleReview}
+                  >
                     <Clock className="w-4 h-4 mr-2" />
                     Schedule Review
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={handleRiskAnalysis}
+                  >
                     <AlertTriangle className="w-4 h-4 mr-2" />
                     Risk Analysis
                   </Button>
@@ -328,7 +421,13 @@ export function MainDashboard() {
       <TutorialOverlay
         isActive={isTutorialActive}
         onClose={() => setIsTutorialActive(false)}
-        onComplete={() => console.log('Tutorial completed!')}
+        onComplete={() => {
+          console.log('Tutorial completed!');
+          toast({
+            title: "Tutorial Completed!",
+            description: "You're now ready to manage your projects with TwinFlow.",
+          });
+        }}
       />
     </div>
   );

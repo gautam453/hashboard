@@ -1,5 +1,7 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -42,10 +44,21 @@ export function DashboardHeader({
   onStartTutorial,
   projectDueDate 
 }: DashboardHeaderProps) {
+  const navigate = useNavigate();
   const [notifications] = useState(3);
 
   const timeUntilDue = Math.ceil((projectDueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const isUrgent = timeUntilDue <= 7;
+
+  const handleSettingsClick = () => {
+    navigate('/settings');
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('twinflow_auth');
+    localStorage.removeItem('twinflow_provider');
+    window.location.reload();
+  };
 
   return (
     <header className="glass border-b sticky top-0 z-50 h-16">
@@ -157,12 +170,12 @@ export function DashboardHeader({
                 <Users className="w-4 h-4 mr-2" />
                 Team Settings
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSettingsClick}>
                 <Settings className="w-4 h-4 mr-2" />
                 Preferences
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
+              <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </DropdownMenuItem>
