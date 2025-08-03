@@ -1,14 +1,59 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from "react";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { MainDashboard } from "@/components/dashboard/MainDashboard";
 
 const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(true);
+
+  // Check if user is already authenticated (you can replace this with real auth logic)
+  useEffect(() => {
+    const authStatus = localStorage.getItem('twinflow_auth');
+    if (authStatus === 'authenticated') {
+      setIsAuthenticated(true);
+      setShowAuthModal(false);
+    }
+  }, []);
+
+  const handleSignIn = (provider: 'google' | 'microsoft') => {
+    // Here you would integrate with real authentication
+    console.log(`Signing in with ${provider}`);
+    
+    // Simulate authentication
+    localStorage.setItem('twinflow_auth', 'authenticated');
+    localStorage.setItem('twinflow_provider', provider);
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <div className="min-h-screen bg-gradient-background flex items-center justify-center">
+          <div className="text-center space-y-6 animate-fade-in">
+            <div className="w-20 h-20 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto">
+              <div className="text-3xl font-bold text-primary-foreground">T</div>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-gradient mb-2">TwinFlow</h1>
+              <p className="text-xl text-muted-foreground">
+                Digital Twin Project Management
+              </p>
+            </div>
+            <div className="loading-shimmer w-64 h-2 rounded mx-auto" />
+          </div>
+        </div>
+        
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onSignIn={handleSignIn}
+        />
+      </>
+    );
+  }
+
+  return <MainDashboard />;
 };
 
 export default Index;
