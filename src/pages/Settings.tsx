@@ -11,6 +11,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTheme } from "@/hooks/useTheme";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Settings as SettingsIcon, 
   Calendar as CalendarIcon, 
@@ -35,7 +37,8 @@ interface ProjectSettings {
 }
 
 export default function Settings() {
-  const [isDark, setIsDark] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [newMember, setNewMember] = useState("");
   const [teamMembers, setTeamMembers] = useState<string[]>([
@@ -58,9 +61,11 @@ export default function Settings() {
       dueDate: selectedDate,
       teamMembers
     };
-    console.log('Saving settings:', settingsData);
     localStorage.setItem('project_settings', JSON.stringify(settingsData));
-    // Here you would typically save to your backend/Supabase
+    toast({
+      title: "Settings saved successfully!",
+      description: "Your project settings have been updated.",
+    });
   };
 
   const addTeamMember = () => {
@@ -266,16 +271,23 @@ export default function Settings() {
                     <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
                   </div>
                   <Button
-                    onClick={() => setIsDark(!isDark)}
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                     variant="outline"
                     size="sm"
                   >
-                    {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                    {isDark ? 'Light' : 'Dark'}
+                    {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                    {theme === 'dark' ? 'Light' : 'Dark'}
                   </Button>
                 </div>
 
-                <Button className="w-full" variant="gradient">
+                <Button 
+                  className="w-full" 
+                  variant="gradient"
+                  onClick={() => toast({
+                    title: "Preferences saved!",
+                    description: "Your application preferences have been updated.",
+                  })}
+                >
                   <Save className="w-4 h-4 mr-2" />
                   Save Preferences
                 </Button>

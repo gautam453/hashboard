@@ -349,28 +349,28 @@ export function MainDashboard() {
                     variant="outline" 
                     size="sm" 
                     className="w-full justify-start"
-                    onClick={handleGenerateReport}
+                    onClick={() => navigate('/analytics')}
                   >
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    Generate Report
+                    View Analytics
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="w-full justify-start"
-                    onClick={handleScheduleReview}
+                    onClick={() => navigate('/reports')}
                   >
                     <Clock className="w-4 h-4 mr-2" />
-                    Schedule Review
+                    Generate Reports
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="w-full justify-start"
-                    onClick={handleRiskAnalysis}
+                    onClick={() => navigate('/tasks')}
                   >
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    Risk Analysis
+                    Manage Tasks
                   </Button>
                 </div>
               </CardContent>

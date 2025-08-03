@@ -6,7 +6,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(true);
 
-  // Check if user is already authenticated (you can replace this with real auth logic)
+  // Check if user is already authenticated
   useEffect(() => {
     const authStatus = localStorage.getItem('twinflow_auth');
     if (authStatus === 'authenticated') {
@@ -15,13 +15,10 @@ const Index = () => {
     }
   }, []);
 
-  const handleSignIn = (provider: 'google' | 'microsoft') => {
-    // Here you would integrate with real authentication
-    console.log(`Signing in with ${provider}`);
-    
-    // Simulate authentication
+  const handleSignIn = (user: any) => {
+    // Store authentication data
     localStorage.setItem('twinflow_auth', 'authenticated');
-    localStorage.setItem('twinflow_provider', provider);
+    localStorage.setItem('twinflow_user', JSON.stringify(user));
     setIsAuthenticated(true);
     setShowAuthModal(false);
   };

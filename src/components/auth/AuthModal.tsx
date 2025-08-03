@@ -1,28 +1,104 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Building2, Mail, Shield, Users, Zap } from "lucide-react";
+import { Building2, Mail, Shield, Users, Zap, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSignIn: (provider: 'google' | 'microsoft') => void;
+  onSignIn: (user: any) => void;
 }
 
 export function AuthModal({ isOpen, onClose, onSignIn }: AuthModalProps) {
-  const [isLoading, setIsLoading] = useState<'google' | 'microsoft' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [projectName, setProjectName] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const { toast } = useToast();
 
-  const handleSignIn = async (provider: 'google' | 'microsoft') => {
-    setIsLoading(provider);
-    // Simulate loading
-    setTimeout(() => {
-      setIsLoading(null);
-      onSignIn(provider);
-      onClose();
-    }, 2000);
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              project_name: projectName,
+              due_date: dueDate,
+            }
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+          toast({
+            title: "Account created successfully!",
+            description: "Please check your email to verify your account.",
+          });
+          onSignIn(data.user);
+          onClose();
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        
+        if (data.user) {
+          toast({
+            title: "Welcome back!",
+            description: "Successfully signed in to your account.",
+          });
+          onSignIn(data.user);
+          onClose();
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "Authentication failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: 'google' | 'azure') => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Authentication failed",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    }
   };
 
   const features = [
@@ -99,53 +175,133 @@ export function AuthModal({ isOpen, onClose, onSignIn }: AuthModalProps) {
               className="h-full flex flex-col justify-center"
             >
               <DialogHeader className="text-center mb-8">
-                <DialogTitle className="text-2xl font-bold">Welcome Back</DialogTitle>
+                <DialogTitle className="text-2xl font-bold">
+                  {isSignUp ? 'Create Account' : 'Welcome Back'}
+                </DialogTitle>
                 <p className="text-muted-foreground">
-                  Sign in to access your digital twin workspace
+                  {isSignUp 
+                    ? 'Set up your digital twin workspace'
+                    : 'Sign in to access your digital twin workspace'
+                  }
                 </p>
               </DialogHeader>
 
-              <div className="space-y-4">
+              <form onSubmit={handleEmailAuth} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {isSignUp && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="projectName">Project Name</Label>
+                      <Input
+                        id="projectName"
+                        placeholder="Enter your project name"
+                        value={projectName}
+                        onChange={(e) => setProjectName(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="dueDate">Project Due Date</Label>
+                      <Input
+                        id="dueDate"
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
                 <Button
-                  onClick={() => handleSignIn('google')}
-                  variant="outline"
+                  type="submit"
                   size="lg"
-                  className="w-full h-12 relative"
-                  disabled={isLoading !== null}
+                  className="w-full h-12"
+                  disabled={isLoading}
                 >
-                  {isLoading === 'google' ? (
+                  {isLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full"
+                      className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
                     />
                   ) : (
-                    <>
-                      <Mail className="w-5 h-5 mr-3" />
-                      Continue with Google
-                    </>
+                    isSignUp ? 'Create Account' : 'Sign In'
                   )}
                 </Button>
+              </form>
 
+              <Separator className="my-6" />
+
+              <div className="space-y-3">
                 <Button
-                  onClick={() => handleSignIn('microsoft')}
+                  onClick={() => handleOAuthSignIn('google')}
                   variant="outline"
                   size="lg"
                   className="w-full h-12"
-                  disabled={isLoading !== null}
+                  disabled={isLoading}
                 >
-                  {isLoading === 'microsoft' ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full"
-                    />
-                  ) : (
-                    <>
-                      <Building2 className="w-5 h-5 mr-3" />
-                      Continue with Microsoft
-                    </>
-                  )}
+                  <Mail className="w-5 h-5 mr-3" />
+                  Continue with Google
+                </Button>
+
+                <Button
+                  onClick={() => handleOAuthSignIn('azure')}
+                  variant="outline"
+                  size="lg"
+                  className="w-full h-12"
+                  disabled={isLoading}
+                >
+                  <Building2 className="w-5 h-5 mr-3" />
+                  Continue with Microsoft
+                </Button>
+              </div>
+
+              <div className="text-center mt-6">
+                <Button
+                  variant="link"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  className="text-sm"
+                >
+                  {isSignUp 
+                    ? 'Already have an account? Sign in'
+                    : "Don't have an account? Sign up"
+                  }
                 </Button>
               </div>
 
