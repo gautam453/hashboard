@@ -110,8 +110,8 @@ function ProjectNode({ node, onClick, isAnimated }: {
 function DependencyLines({ projectData }: { projectData: ProjectNode[] }) {
   const lines: JSX.Element[] = [];
   
-  projectData.forEach((node) => {
-    node.dependencies.forEach((depId) => {
+  projectData.forEach((node, nodeIndex) => {
+    node.dependencies.forEach((depId, depIndex) => {
       const depNode = projectData.find(n => n.id === depId);
       if (depNode) {
         const points = [
@@ -119,18 +119,22 @@ function DependencyLines({ projectData }: { projectData: ProjectNode[] }) {
           new THREE.Vector3(...depNode.position)
         ];
         
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        
         lines.push(
-          <line key={`${node.id}-${depId}`}>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={points.length}
-                array={new Float32Array(points.flatMap(p => [p.x, p.y, p.z]))}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color="#666666" transparent opacity={0.4} />
-          </line>
+          <primitive 
+            key={`${node.id}-${depId}-${nodeIndex}-${depIndex}`}
+            object={
+              new THREE.Line(
+                geometry,
+                new THREE.LineBasicMaterial({ 
+                  color: '#666666', 
+                  transparent: true, 
+                  opacity: 0.4 
+                })
+              )
+            }
+          />
         );
       }
     });
